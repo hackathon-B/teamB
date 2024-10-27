@@ -1,0 +1,59 @@
+# docker-compose.yml
+version: '3.8'
+
+# ----フロントエンド----
+services:
+  frontend:
+    container_name: react #コンテナ名をreactに設定
+    build:
+      context: ./frontend # ビルドコンテキストのディレクトリを指定
+      dockerfile: Dockerfile 
+    ports:
+      - "5173:5173" 
+    depends_on:
+      - backend  # backendサービスが起動するまで待機
+    volumes:
+      - ./frontend:/app  # ローカルの./frontend をコンテナの /app にマウント
+      - /app/node_modules # node_modules をホストに依存せずに使用
+    command: /bin/sh -c "npm run dev -- --host 0.0.0.0" # コンテナの外からアクセスできるように追加
+    environment:
+      - NODE_ENV=development # 環境変数を開発モードに設定
+
+# ----バックエンド----
+  backend:
+    container_name: fastapi # コンテナ名をfastapiに設定
+    build:
+      context: ./backend # ビルドコンテキストのディレクトリを設定
+      dockerfile: Dockerfile # 使用するDockerfileを指定
+    ports:
+      - "8000:80" # ホストのポート8000番をコンテナのポート80にマッピング
+    command: gunicorn -w 4 -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:80 # Gunicornを使ってFastAPIを起動
+    depends_on:
+      - db # dbサービスが起動するまで待機
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: app_db
+      DB_USER: app_user
+      DB_PASSWORD: app_password
+    volumes:
+      - ./backend/app:/app
+
+# -------DB--------
+  db:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: app_db
+      MYSQL_USER: app_user
+      MYSQL_PASSWORD: app_password
+      MYSQL_ALLOW_EMPTY_PASSWORD: "no" # 空のパスワードを許可しない
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:
