@@ -30,11 +30,11 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 # 新規登録ページの表示
-@app.get("/resister")
+@app.get("/api/auth/register")
 
 
 # 新規登録処理
-@app.post("/resister")
+@app.post("/api/auth/register")
 async def user_resister(user: User):
     # すでにメールアドレスが登録されているか確認
     if user.email in fake_user_db:
@@ -49,12 +49,12 @@ async def user_resister(user: User):
     return {"message": "新規登録が完了しました"}
 
 # ログインページの表示
-@app.get("/login")
+@app.get("/api/auth/login")
 async def login_page():
     return {"message": "ログインページ"}
 
 # ログイン処理
-@app.post("/login")
+@app.post("/api/auth/login")
 async def user_login(email:Emailstr, password: str):
     user = fake_user_db.get(email)
     if not user or user['hash_password'] != hasf_password(password):
@@ -68,6 +68,6 @@ async def user_login(email:Emailstr, password: str):
         }
 
 # ログアウト
-@app.post("/logout")
+@app.post("/api/auth/logout")
 async def logout():
     return {"message": "ログアウトしました"}
